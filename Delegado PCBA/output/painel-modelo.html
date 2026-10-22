@@ -1,0 +1,83 @@
+<div id="pcba-audit">
+  <style>
+    #pcba-audit {color:var(--foreground);font-size:var(--font-size-base)}
+    #pcba-audit .metrics {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:16px 0}
+    #pcba-audit .section {margin-top:22px}
+    #pcba-audit .status {display:inline-flex;align-items:center;gap:6px}
+    #pcba-audit .dot {display:inline-block;width:9px;height:9px;border-radius:50%;flex:none}
+    #pcba-audit .started {background:var(--viz-series-1)}
+    #pcba-audit .contact {background:var(--viz-series-2)}
+    #pcba-audit .pending {background:var(--muted-foreground);opacity:.6}
+    #pcba-audit summary {padding:12px 0;font-weight:500}
+    #pcba-audit details {border-bottom:1px solid var(--border)}
+    #pcba-audit .detail-body {padding:0 0 14px}
+    #pcba-audit .detail-body p {margin:8px 0}
+    #pcba-audit .titleline {padding-right:90px}
+    #pcba-audit td,#pcba-audit th {vertical-align:top}
+    #pcba-audit .chart {display:flex;height:14px;gap:3px;margin:12px 0}
+    #pcba-audit .chart span {height:100%}
+    #pcba-audit .legend {display:flex;flex-wrap:wrap;gap:12px}
+    #pcba-audit .selector {margin:16px 0}
+    #pcba-audit .compare {display:grid;grid-template-columns:1fr 1fr;gap:20px}
+    @media(max-width:520px){#pcba-audit .metrics,#pcba-audit .compare{grid-template-columns:1fr}#pcba-audit .titleline{padding-right:0}}
+  </style>
+  <div class="titleline"><h2>PCBA · situação em 22/10/2026</h2><span class="text-small">Edital local × estudo demonstrado nesta conversa</span></div>
+  <div class="metrics">
+    <div class="card viz-stat"><div>Disciplinas com blocos iniciados</div><div class="viz-stat-value tabular-nums">5 / 17</div></div>
+    <div class="card viz-stat"><div>Somente contato pontual</div><div class="viz-stat-value tabular-nums">2 / 17</div></div>
+    <div class="card viz-stat"><div>Sem estudo registrado</div><div class="viz-stat-value tabular-nums">10 / 17</div></div>
+  </div>
+  <div class="chart" role="img" aria-label="17 disciplinas: cinco iniciadas, duas com contato pontual e dez sem estudo registrado"><span class="started" style="flex:5"></span><span class="contact" style="flex:2"></span><span class="pending" style="flex:10"></span></div>
+  <div class="legend"><span class="status"><i class="dot started"></i>Em estudo</span><span class="status"><i class="dot contact"></i>Contato pontual</span><span class="status"><i class="dot pending"></i>Não iniciado</span></div>
+  <p>Nenhuma disciplina integralmente concluída. Estes números indicam contato com matérias; não são percentual de domínio nem probabilidade de aprovação.</p>
+  <div class="section table-responsive"><table class="table table-sm"><thead><tr><th>Disciplina</th><th>Situação</th><th>Conteúdo trabalhado</th></tr></thead><tbody id="pcba-overview"></tbody></table></div>
+  <div class="section">
+    <h3>Comparação com cada item do edital</h3>
+    <div class="selector"><label class="form-label" for="pcba-subject">Disciplina</label><select id="pcba-subject" class="form-select"></select></div>
+    <div id="pcba-selection" aria-live="polite"></div>
+    <p class="text-small">Subitens preservados dentro do item principal. Abra cada item para conferir o texto e a evidência. “Parcial” não cobre todos os subitens.</p>
+    <div id="pcba-items"></div>
+  </div>
+  <div class="section"><h3>O que os resultados demonstram</h3><div id="pcba-evidence"></div></div>
+  <div class="section compare">
+    <div><h3>Discursiva</h3><ul><li>Relatório: tentativa com correções; sem peça completa validada no padrão PCBA.</li><li>Casos: respostas curtas e exercício adaptado; sem simulado completo.</li><li>Edital: peça /60 + dois casos /20; mínimo total 70.</li></ul></div>
+    <div><h3>Dados ainda ausentes</h3><ul><li>Horas de foco efetivamente realizadas.</li><li>Simulado integral de 100 questões com tempo controlado.</li><li>Aderência ao ciclo planejado e notas discursivas completas.</li><li>Execução de TAF, exames, títulos e demais etapas.</li></ul></div>
+  </div>
+  <div class="section"><h3>Dificuldades observadas</h3><ul id="pcba-errors"></ul></div>
+  <div class="section"><h3>Ajuste do estudo</h3><ol><li>Revisões curtas dos erros, alternadas com avanço no edital.</li><li>Retomar a rotação das matérias e incluir as ainda não iniciadas.</li><li>Ampliar questões oficiais inéditas e registrar tempo e dúvida.</li><li>Treinar peças e casos completos; registrar horas reais.</li></ol></div>
+  <p class="text-small">Fonte: Edital.pdf local, Anexo I, e histórico desta conversa. Estudo externo não informado não foi presumido. Inscrição confirmada pelo usuário. Objetiva: 40 comuns + 60 específicas, mínimo 70/100; não foi presumida distribuição por disciplina.</p>
+</div>
+<script>
+(() => {
+  const data = __DATA__;
+  const root = document.getElementById('pcba-audit');
+  const overview = root.querySelector('#pcba-overview');
+  const select = root.querySelector('#pcba-subject');
+  const selection = root.querySelector('#pcba-selection');
+  const items = root.querySelector('#pcba-items');
+  const evidence = root.querySelector('#pcba-evidence');
+  const errors = root.querySelector('#pcba-errors');
+  function element(tag,text,cls) { const node=document.createElement(tag);if(text!==undefined)node.textContent=text;if(cls)node.className=cls;return node; }
+  function status(value) {const n=element('span',undefined,'status');n.append(element('i',undefined,'dot '+(value==='Em estudo'||value==='Parcial'?'started':value==='Contato pontual'?'contact':'pending')),document.createTextNode(value));return n;}
+  data.disciplines.forEach((d,i)=>{
+    const row=element('tr');row.append(element('td',d.name));const cell=element('td');cell.append(status(d.state));row.append(cell,element('td',d.covered));overview.append(row);
+    const option=element('option',d.name);option.value=String(i);select.append(option);
+  });
+  function render() {
+    const d=data.disciplines[Number(select.value)];selection.replaceChildren();items.replaceChildren();
+    selection.append(element('p',d.group+' · '+d.state),element('p','Próximo passo: '+d.next));
+    d.items.forEach(it=>{
+      const detail=element('details');const summary=element('summary',undefined,'cursor-interaction');
+      const label=it.text.length>105?it.text.slice(0,105)+'…':it.text;
+      summary.append(document.createTextNode(it.number+'. '+label+' · '+it.status));detail.append(summary);
+      const body=element('div',undefined,'detail-body');body.append(element('p',it.text));const proof=element('p');proof.append(element('strong','Evidência: '),document.createTextNode(it.evidence));body.append(proof);detail.append(body);items.append(detail);
+    });
+  }
+  data.evidence.forEach(e=>{const detail=element('details');const summary=element('summary',e.name+' · '+e.result,'cursor-interaction');detail.append(summary,element('p',e.limit,'detail-body'));evidence.append(detail);});
+  data.pending.forEach(p=>errors.append(element('li',p)));
+  function restore(state) {const value=state?.privateContent?.subject;if(Number.isInteger(value)&&value>=0&&value<data.disciplines.length)select.value=String(value);else select.value='7';render();}
+  restore(window.openai?.widgetState);
+  select.addEventListener('change',()=>{render();if(window.openai?.setWidgetState)window.openai.setWidgetState({modelContent:{disciplina:data.disciplines[Number(select.value)].name},privateContent:{subject:Number(select.value)}}).catch(()=>{});});
+  window.addEventListener('openai:set_globals',event=>{if(event.detail?.globals?.widgetState)restore(event.detail.globals.widgetState);});
+})();
+</script>
